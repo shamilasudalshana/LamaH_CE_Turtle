@@ -6,7 +6,7 @@ from SPARQLWrapper import SPARQLWrapper, JSON
 app = FastAPI()
 
 # Define SPARQL endpoint (Replace with your Virtuoso endpoint URL)
-SPARQL_ENDPOINT = "https://sparql.knowledgehub.test.n4e.geo.tu-dresden.de/gsp"
+SPARQL_ENDPOINT = "https://sparql.knowledgehub.test.n4e.geo.tu-dresden.de/"
 
 class SPARQLQuery(BaseModel):
     query: str

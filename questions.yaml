@@ -1,0 +1,1007 @@
+Question templates using spatial facets:
+  Object - Location/Footprint:
+    "Where is the 'Schlehdorf' gauging station located within the catchment area? [What are the coordinates] " : |
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+      PREFIX schema: <https://schema.org/>
+
+      SELECT ?wkt ?easting ?northing ?elevation
+      FROM <http://hydroturtle/LamahCE>
+      WHERE {
+          # Find the sensor with the name "Bangs"
+          ?sensor schema:name "Bangs" ;
+                  geo:hasGeometry ?geom .
+          
+          # Get the WKT representation
+          ?geom geo:asWKT ?wkt .
+          
+          # Convert WKT into geometry object using Virtuoso functions
+          BIND (bif:st_geomfromtext(?wkt) AS ?geomObj)
+          
+          # Extract coordinates using Virtuoso spatial functions
+          BIND (bif:st_x(?geomObj) AS ?easting)   # Longitude
+          BIND (bif:st_y(?geomObj) AS ?northing)  # Latitude
+          BIND (bif:st_z(?geomObj) AS ?elevation) # Elevation
+      }
+
+    "Where are the gauging stations located within the catchment areas for high annual precipitation in 2015?"  : |
+      #[Wrote query for flow rate, for precipitation would be bit different since it is a catchment TS, flow is available as guage TS ]
+      
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+      PREFIX locn: <http://www.w3.org/ns/locn#>
+      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+
+      SELECT ?stationName ?easting ?northing (SUM(?flowRate) AS ?totalFlowRate)
+      FROM <http://hydroturtle/LamahCE>
+      WHERE {
+
+          # Find the observations with precipitation[envthes:30106] (flow rate for this time - envthes:21242) 
+          ?observation rdf:type sosa:Observation ;
+                    sosa:observedProperty envthes:21242 ;
+                    sosa:madeBySensor ?station ;
+                    sosa:resultTime ?resultTime ;
+                    sosa:hasResult ?result .
+
+            #Filter results of 2015
+            FILTER(YEAR(?resultTime) = 2015)
+
+            # Access the blank node for QuantityValue
+          ?result rdf:type qudt:QuantityValue ;
+                qudt:numericValue ?flowRate;
+                qudt:unit unit:M3-PER-SEC.
+
+          # Retrieve gauging station and location details
+          ?station rdf:type sosa:Sensor ;
+                schema:name ?stationName ;
+                geo:hasGeometry ?locationGeometry .
+
+          ## Get the WKT representation
+          ?locationGeometry geo:asWKT ?wkt .
+
+          # Convert WKT into geometry object using Virtuoso functions
+          BIND (bif:st_geomfromtext(?wkt) AS ?geomObj)
+          
+          # Extract coordinates using Virtuoso spatial functions
+          BIND (bif:st_x(?geomObj) AS ?easting)   # Longitude
+          BIND (bif:st_y(?geomObj) AS ?northing)  # Latitude
+
+      }
+
+      # Group by station to sum precipitation values (this one is for flow rate for now) for each station in 2015
+      GROUP BY ?stationName ?easting ?northing
+      ORDER BY DESC(?totalFlowRate)
+      LIMIT 3
+
+    "Where are the largest 5 catchment areas in this dataset?" : |
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+      PREFIX locn: <http://www.w3.org/ns/locn#>
+      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+
+      SELECT ?stationName ?catchment ?catchmentArea ?easting ?northing
+      FROM <http://hydroturtle/LamahCE>
+      WHERE {
+
+            #find the station name 
+            ?sensor schema:name ?stationName;
+                          n4e_hyd:monitorsCatchment ?catchment;
+                          geo:hasGeometry ?locationGeometry .
+
+            # Find the catchment area
+            ?catchment n4e_hyd:catchment_area_calculated ?catchmentArea.
+
+            # This is addition to the question
+            ## Get the WKT representation
+            ?locationGeometry geo:asWKT ?wkt . 
+
+            ## Convert WKT into geometry object using Virtuoso functions
+            BIND (bif:st_geomfromtext(?wkt) AS ?geomObj)
+          
+            ## Extract coordinates using Virtuoso spatial functions
+            BIND (bif:st_x(?geomObj) AS ?easting)   # Longitude
+            BIND (bif:st_y(?geomObj) AS ?northing)  # Latitude
+
+      }
+
+      # take the largest catchment area.  
+      ORDER BY DESC(?catchmentArea)
+      LIMIT 5
+
+
+  Object - Boundary:
+    "What are the boundaries of the catchment with the highest precipitation in 2012?": |
+      # this is run for fow rate because only updated flow rate to the triple store at the moment
+
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+      PREFIX locn: <http://www.w3.org/ns/locn#>
+      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+      PREFIX virtrdf: <http://www.openlinksw.com/schemas/virtrdf#>
+
+      SELECT ?neighbourCatchment ?catchment ?maxFlow ?time ?neighbourCatchmentWKT 
+      FROM <http://hydroturtle/LamahCE>
+      WHERE {
+          # Find the catchment with the highest flow rate between 2012-2016
+          {
+
+              SELECT ?catchment ?catchmentWKT (MAX(?flowRate) AS ?maxFlow) ?time
+              WHERE {
+                  # Find the observations with precipitation[envthes:30106] (flow rate for this time - envthes:21242) - 
+                  # precipitation can be written as directly associalted with catchment as observerd property 
+                  ?observation rdf:type sosa:Observation ;
+                      sosa:observedProperty envthes:21242 ;
+                      sosa:madeBySensor ?sensor ;
+                      sosa:resultTime ?time ;
+                      sosa:hasResult ?result.
+
+                  ## take the flow rate value
+                  ?result qudt:numericValue ?flowRate;
+                          qudt:unit  unit:M3-PER-SEC.
+
+                  # Take the catchment geometry as WKT
+                  ?sensor n4e_hyd:monitorsCatchment ?catchment .
+                  ?catchment geo:hasGeometry ?catchmentGeometry.
+                  ?catchmentGeometry geo:asWKT ?catchmentWKT.
+
+                FILTER (?time >= "2012-01-01"^^xsd:dateTime && ?time <= "2015-12-31"^^xsd:dateTime)
+                    #FILTER (xsd:dateTime(?time) >= "2016-01-01T00:00:00Z"^^xsd:dateTime &&
+                  #xsd:dateTime(?time) <= "2016-12-31T23:59:59Z"^^xsd:dateTime)
+      }
+              ORDER BY DESC(?maxFlow)
+              LIMIT 1
+
+      }
+
+                  #from here this should try to take 
+                  ?neighbourCatchment rdf:type envthes:30212 ;
+                                      geo:hasGeometry ?neighbourCatchmentGeom .
+
+                  ?neighbourCatchmentGeom geo:asWKT ?neighbourCatchmentWKT .
+
+                  # Convert WKT into geometry object using Virtuoso functions
+                  BIND (bif:st_geomfromtext(?catchmentWKT) AS ?geomObjCat)
+                  BIND (bif:st_geomfromtext(?neighbourCatchmentWKT ) AS ?geomObjCatNeig)
+
+                  FILTER (?neighbourCatchment != ?catchment) # Exclude the max flow catchment
+                  FILTER bif:st_intersects(?geomObjCat, ?geomObjCatNeig, 0) # 0 distance means touching borders
+
+              }
+
+    "What is the boundary of the 'Oberammergau' gauging station area for discharge monitoring? # in here the station name 'Garsella' is used since only 35 stations are uploaded to the triple store at the moment.": |
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+      PREFIX locn: <http://www.w3.org/ns/locn#>
+      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+      PREFIX virtrdf: <http://www.openlinksw.com/schemas/virtrdf#>
+
+      SELECT ?neighbourCatchment ?neighbourSensorName ?catchmentGiven 
+      FROM <http://hydroturtle/LamahCE>
+      WHERE {
+          # Find the catchment with the highest flow rate between 2012-2016
+          {
+
+              SELECT ?catchmentGiven ?catchmenGiventWKT 
+              WHERE {
+                  # Find the sensor with the name "Garsella" and catchment associated with it
+                  ?sensorGiven rdf:type sosa:Sensor;
+                          schema:name "Garsella";
+                          n4e_hyd:monitorsCatchment ?catchmentGiven.
+
+                  # take the catchment geomatery of the particular sensor 
+                  ?catchmentGiven geo:hasGeometry ?catchmentGivenGeometry.
+                  ?catchmentGivenGeometry geo:asWKT ?catchmenGiventWKT.
+
+      }
+
+      }
+
+                  #Take the neighbouring catchements. 
+                  ?neighbourCatchment rdf:type envthes:30212 ;
+                                      geo:hasGeometry ?neighbourCatchmentGeom .
+
+                  ?neighbourSensor rdf:type sosa:Sensor;
+                                  schema:name ?neighbourSensorName;
+                                  n4e_hyd:monitorsCatchment ?neighbourCatchment.
+
+                  ?neighbourCatchmentGeom geo:asWKT ?neighbourCatchmentWKT .
+
+                  # Convert WKT into geometry object using Virtuoso functions
+                  BIND (bif:st_geomfromtext(?catchmenGiventWKT) AS ?geomObjCatGiven)
+                  BIND (bif:st_geomfromtext(?neighbourCatchmentWKT ) AS ?geomObjCatNeig)
+
+                  FILTER (?neighbourCatchment != ?catchmentGiven) # exclude the given catchment from the selection 
+                  FILTER bif:st_intersects(?geomObjCatGiven, ?geomObjCatNeig, 0) # 0 distance means touching borders
+
+              }
+
+
+
+  Object - Spatial Properties:
+    "What is the surface area of the largest catchment in the dataset?" : |
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+      PREFIX locn: <http://www.w3.org/ns/locn#>
+      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+      PREFIX virtrdf: <http://www.openlinksw.com/schemas/virtrdf#>
+
+      SELECT ?guagingStationName ?catchment ?catchmentArea
+      FROM <http://hydroturtle/LamahCE>
+      WHERE {
+          # take the catchement areas of catchements (envthes:30212 is the catchement class)
+          ?catchment rdf:type envthes:30212 ;
+                  n4e_hyd:catchment_area_calculated ?catchmentArea. 
+
+          # find the name of the sensor related with catchement
+          ?sensor n4e_hyd:monitorsCatchment ?catchment;
+                  schema:name ?guagingStationName. 
+      }
+      ORDER BY DESC(?catchmentArea)
+      LIMIT 1
+
+    
+    "What is the average annual precipitation in catchment 1 for the period between 2010 and 2020?" : |
+      ## This query is written for flow rate between 2012 to 2015 because of the current data uploaded in TS
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+      PREFIX locn: <http://www.w3.org/ns/locn#>
+      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+      PREFIX virtrdf: <http://www.openlinksw.com/schemas/virtrdf#>
+
+      SELECT ?guagingStationName (AVG(?yearlyTolalFlowrate) AS ?averageAnnualFlowRate)
+      FROM <http://hydroturtle/LamahCE>
+      WHERE {
+
+          {
+              SELECT ?resultYear (SUM(?flowRate) AS ?yearlyTolalFlowrate) ?guagingStationName
+              WHERE {
+                  
+                  # Find the observations with precipitation[envthes:30106] (flow rate for this time - envthes:21242) - 
+                  # precipitation can be written as directly associalted with catchment as observerd property 
+                  ?observation rdf:type sosa:Observation ;
+                      sosa:observedProperty envthes:21242 ;
+                      sosa:madeBySensor ?sensor ;
+                      sosa:resultTime ?resultTime ;
+                      sosa:hasResult ?result.
+
+                  ## # Access the blank node to retrieve the precipitation value [for this case used flow rate due to uploaded data for the moment to triple store ]
+                  ?result qudt:numericValue ?flowRate;
+                          qudt:unit  unit:M3-PER-SEC.
+
+                  # find catchment related with sensor 
+                  ?sensor n4e_hyd:monitorsCatchment n4e_hyd:catchment_1;
+                          schema:name ?guagingStationName
+
+                  # Extract the year directly in the FILTER and assign to ?year [this query is written between 2012 to 2015 for the moment data is uploaded]
+                  BIND (YEAR(?resultTime) AS ?resultYear)
+                  FILTER (?resultYear >= 2012 && ?resultYear <= 2015)
+              }
+              GROUP BY ?resultYear ?guagingStationName
+          }
+      }
+
+
+    "What are the average annual flow rates at Gauging Station 1 for each year from 2012 to 2015?" : |
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+      PREFIX locn: <http://www.w3.org/ns/locn#>
+      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+      PREFIX virtrdf: <http://www.openlinksw.com/schemas/virtrdf#>
+
+      SELECT ?resultYear (AVG(?flowRate) AS ?yearlyAvgFlowrate) ?guagingStationName
+      FROM <http://hydroturtle/LamahCE>
+      WHERE {
+                  # Find the observations with precipitation[envthes:30106] (flow rate for this time - envthes:21242) - 
+                  # precipitation can be written as directly associalted with catchment as observerd property 
+                  ?observation rdf:type sosa:Observation ;
+                      sosa:observedProperty envthes:21242 ;
+                      sosa:madeBySensor n4e_hyd:sensor_1 ;
+                      sosa:resultTime ?resultTime ;
+                      sosa:hasResult ?result.
+
+                  ## # Access the blank node to retrieve the precipitation value [for this case used flow rate due to uploaded data for the moment to triple store ]
+                  ?result qudt:numericValue ?flowRate;
+                          qudt:unit  unit:M3-PER-SEC.
+
+                  # find catchment related with sensor 
+                  n4e_hyd:sensor_1 schema:name ?guagingStationName.
+
+                  # Extract the year directly in the FILTER and assign to ?year [this query is written between 2012 to 2015 for the moment data is uploaded]
+                  BIND (YEAR(?resultTime) AS ?resultYear)
+                  FILTER (?resultYear >= 2012 && ?resultYear <= 2015)
+              }
+              GROUP BY ?resultYear ?guagingStationName
+
+    "What is the elevation of the 'Schlehdorf' gauging station?" : |
+      # query is written for "Beschling" since only 35 station are uploaded to triple store at the moment
+      # when WKT is written with "^^geo:wktLiteral, conversion to geom object is not required. 
+
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+      PREFIX locn: <http://www.w3.org/ns/locn#>
+      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+      PREFIX virtrdf: <http://www.openlinksw.com/schemas/virtrdf#>
+
+      SELECT ?easting ?northing ?elevation ?geomObj
+      FROM <http://hydroturtle/LamahCE>
+      WHERE {
+
+          # Find the sensor with the name "Beschling"
+          ?sensor schema:name "Beschling" ; # change to "Schlehdorf" as mentioned in the question. 
+                  geo:hasGeometry ?geom .
+          
+          # Get the WKT representation
+          ?geom geo:asWKT ?wkt .
+          
+          # Convert WKT into geometry object using Virtuoso functions
+          BIND (bif:st_geomfromtext(?wkt) AS ?geomObj)
+          
+          # Extract coordinates using Virtuoso spatial functions
+          BIND (bif:st_x(?geomObj) AS ?easting)   # Longitude
+          BIND (bif:st_y(?geomObj) AS ?northing)  # Latitude
+          BIND (bif:st_z(?geomObj) AS ?elevation) # Elevation
+      }
+
+    
+    "What is the highest average monthly evaporation recorded at catchment 2 over the last decade?" : |
+      # this query is written to take the flow at guaging station "Gisingen" because only flow is updated. Catchment observations can be taken much directly by sosa:hasFeatureOfInterest 
+
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+      PREFIX locn: <http://www.w3.org/ns/locn#>
+      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+      PREFIX virtrdf: <http://www.openlinksw.com/schemas/virtrdf#>
+
+      SELECT ?resultMonth (SUM(?flowRate) AS ?monthlyTolalFlowrate) #?guagingStationName
+      FROM <http://hydroturtle/LamahCE>
+      WHERE {
+              # Find the observations with precipitation[envthes:30106] (flow rate for this time - envthes:21242) - 
+              # precipitation can be written as directly associalted with catchment as observerd property 
+              ?observation rdf:type sosa:Observation ;
+                  sosa:observedProperty envthes:21242 ;
+                  sosa:madeBySensor ?sensor ;
+                  sosa:resultTime ?resultTime ;
+                  sosa:hasResult ?result.
+
+              ## # Access the blank node to retrieve the precipitation value [for this case used flow rate due to uploaded data for the moment to triple store ]
+              ?result qudt:numericValue ?flowRate;
+                      qudt:unit  unit:M3-PER-SEC.
+
+              # find catchment related with sensor 
+              ?sensor n4e_hyd:monitorsCatchment ?catchment;
+                      schema:name "Gisingen" #?guagingStationName
+
+              # Extract the year and month assigned to ?resultYear and ?resultMonth directly 
+              BIND (YEAR(?resultTime) AS ?resultYear)
+              BIND (MONTH(?resultTime)AS ?resultMonth)
+
+              # Filter and assign to ?year [this query is written between 2012 to 2014 for the moment data is uploaded]
+              FILTER (?resultYear >= 2012 && ?resultYear <= 2013)
+          }
+          GROUP BY ?resultMonth #?guagingStationName
+          ORDER BY DESC(?monthlyTolalFlowrate)
+          #LIMIT 1   # can use limit to see only the maximum
+
+    "What is the all-time minimum and maximum river flow observed at the 'Schwarzach' gauging station?" : |
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+      PREFIX locn: <http://www.w3.org/ns/locn#>
+      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+      PREFIX virtrdf: <http://www.openlinksw.com/schemas/virtrdf#>
+
+      SELECT ?guagingStationName (MIN(?flowRate) AS ?minRiverFlow) (MAX(?flowRate) AS ?maxRiverFlow)
+      FROM <http://hydroturtle/LamahCE>
+      WHERE {
+          # Find the observations with precipitation[envthes:30106] (flow rate for this time - envthes:21242) - 
+          # precipitation can be written as directly associalted with catchment as observerd property 
+          ?observation rdf:type sosa:Observation ;
+              sosa:observedProperty envthes:21242 ;
+              sosa:madeBySensor ?sensor ;
+              sosa:resultTime ?resultTime ;
+              sosa:hasResult ?result.
+
+          ## # Access the blank node to retrieve the precipitation value [for this case used flow rate due to uploaded data for the moment to triple store ]
+          ?result qudt:numericValue ?flowRate;
+                  qudt:unit  unit:M3-PER-SEC.
+
+          # find gauging station name 
+          ?sensor schema:name "Schwarzach" .   
+          }
+
+    "What are the all-time minimum and maximum river flow observed at all the gauging stations?" : |
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+      PREFIX locn: <http://www.w3.org/ns/locn#>
+      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+      PREFIX virtrdf: <http://www.openlinksw.com/schemas/virtrdf#>
+
+      SELECT ?guagingStationName (MIN(?flowRate) AS ?minRiverFlow) (MAX(?flowRate) AS ?maxRiverFlow)
+      FROM <http://hydroturtle/LamahCE>
+      WHERE {
+          # Find the observations with precipitation[envthes:30106] (flow rate for this time - envthes:21242) - 
+          # Precipitation can be written as directly associated with catchment as observed property 
+          ?observation rdf:type sosa:Observation ;
+              sosa:observedProperty envthes:21242 ;
+              sosa:madeBySensor ?sensor ;
+              sosa:resultTime ?resultTime ;
+              sosa:hasResult ?result.
+
+          ## # Access the blank node to retrieve the precipitation value [for this case, used flow rate due to uploaded data for the moment to triple store ]
+          ?result qudt:numericValue ?flowRate;
+                  qudt:unit  unit:M3-PER-SEC.
+
+          # # find gauging station name  
+          ?sensor n4e_hyd:monitorsCatchment ?catchment;
+                  schema:name ?guagingStationName #"Schwarzach"    ## use directly station name instead of ?guagingStationName variable only particular station data need to be extracted. 
+          }
+          GROUP BY ?guagingStationName #can remove GROUP BY - specially, only one gauging station is used. 
+
+    "How many annual average frost days (days with temperatures below 0°C) were recorded at the 'Dillingen' gauging station from 2010 to 2020?" : |
+      #### need to double check the query . answers cannot check some part of the TTL files hasn't upload when I try to upload catchment 1 [Bangs]time series .
+      #### Most liketly this is incorrect 
+
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+      PREFIX locn: <http://www.w3.org/ns/locn#>
+      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+      PREFIX virtrdf: <http://www.openlinksw.com/schemas/virtrdf#>
+
+      SELECT ?year (AVG(?frostDays) AS ?averageAnnualFrostDays)
+      FROM <http://hydroturtle/LamahCE>
+      WHERE {
+          {
+            SELECT ?year (COUNT(?resultDate) AS ?frostDays)
+            WHERE {
+              # Because the freezing is related to min air temp -  temperature observations at the "Dillingen" station for AirTemperature2mAVG (for this min temp also can be used)
+              ?observation rdf:type sosa:Observation ;
+                          sosa:observedProperty n4e_hyd:AirTemperature2mAvg ;
+                          sosa:madeBySensor ?sensor ;
+                          sosa:resultTime ?resultDate ;
+                          sosa:hasResult ?result .
+              
+              # Filter for the "Bangs" station and dates between 2010 and 2020 #only "Bangs" catchment TS is uploaded for now. therefore it used. 
+              ?sensor rdf:type sosa:Sensor ;
+                      schema:name "Bangs" .
+
+              FILTER (YEAR(?resultDate) >= 2010 && YEAR(?resultDate) <= 2020)
+        
+              # Get temperature value and check if it's below 0°C
+              ?result qudt:numericValue ?temperature .
+              FILTER (?temperature < 0)
+        
+              # Extract the year for grouping
+              BIND(YEAR(?resultDate) AS ?year)
+            }
+            GROUP BY ?year
+          }
+        }
+        GROUP BY ?year
+        ORDER BY ?year
+
+  Network - Spatial Relationships:
+    "What is the spatial relationship (distance, elevation difference)  between the 'Bangs' and 'Loruens-Aeule' gauging stations?" : |
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+      PREFIX locn: <http://www.w3.org/ns/locn#>
+      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+      PREFIX virtrdf: <http://www.openlinksw.com/schemas/virtrdf#>
+
+      SELECT ?distance  ?elevDiffBeschlingMinusGarsella ?geomObjBeschling ?geomObjGarsella ?elevDiffBeschlingMinusGarsella
+      FROM <http://hydroturtle/LamahCE>
+      WHERE {
+
+          # Find the sensor with the name "Beschling"
+          ?sensorBeschling schema:name "Beschling" ; 
+                  geo:hasGeometry ?geomBeschling .
+          
+          # Get the WKT representation
+          ?geomBeschling geo:asWKT ?wktBeschling .
+          
+          # Convert WKT into geometry object using Virtuoso functions
+          BIND (bif:st_geomfromtext(?wktBeschling) AS ?geomObjBeschling)
+          
+          # Extract coordinates using Virtuoso spatial functions
+          BIND (bif:st_x(?geomObjBeschling) AS ?eastingBeschling)   # Longitude
+          BIND (bif:st_y(?geomObjBeschling) AS ?northingBeschling)  # Latitude
+          BIND (bif:st_z(?geomObjBeschling) AS ?elevationBeschling) # Elevation
+
+
+          # Find the sensor with the name "Garsella"
+          ?sensorGarsella schema:name "Garsella" ; 
+                  geo:hasGeometry ?geomGarsella .
+          
+          # Get the WKT representation
+          ?geomGarsella geo:asWKT ?wktGarsella .
+          
+          # Convert WKT into geometry object using Virtuoso functions
+          BIND (bif:st_geomfromtext(?wktGarsella) AS ?geomObjGarsella)
+          
+          # Extract coordinates using Virtuoso spatial functions
+          BIND (bif:st_x(?geomObjGarsella) AS ?eastingGarsella)   # Longitude
+          BIND (bif:st_y(?geomObjGarsella) AS ?northingGarsella)  # Latitude
+          BIND (bif:st_z(?geomObjGarsella) AS ?elevationGarsella) # Elevation
+          
+          # Compute geodesic distance in meters
+          BIND (bif:st_distance(?geomObjBeschling, ?geomObjGarsella, <http://www.opengis.net/def/uom/OGC/1.0/metre>) AS ?distance)
+          BIND ((?elevationBeschling-?elevationGarsella) as ?elevDiffBeschlingMinusGarsella)
+
+      }
+
+    "What is the distance between the highest and lowest elevation gauging stations in this dataset?" : |
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+      PREFIX locn: <http://www.w3.org/ns/locn#>
+      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+      PREFIX virtrdf: <http://www.openlinksw.com/schemas/virtrdf#>
+
+      SELECT ?maxStationName ?maxElevation ?minStationName ?minElevation ?distance
+      FROM <http://hydroturtle/LamahCE>
+      WHERE {
+          {
+              # Get the station with the highest elevation
+              SELECT ?maxStationName ?maxElevation ?maxWKT
+              WHERE {
+                  ?sensor schema:name ?maxStationName ; 
+                          geo:hasGeometry ?geom .
+                  ?geom geo:asWKT ?maxWKT .
+                  BIND (bif:st_geomfromtext(?maxWKT) AS ?geomObj)
+                  BIND (bif:st_z(?geomObj) AS ?maxElevation) # Elevation
+              }
+              ORDER BY DESC(?maxElevation)
+              LIMIT 1
+          }
+          
+          {
+              # Get the station with the lowest elevation
+              SELECT ?minStationName ?minElevation ?minWKT
+              WHERE {
+                  ?sensor schema:name ?minStationName ; 
+                          geo:hasGeometry ?geom .
+                  ?geom geo:asWKT ?minWKT .
+                  BIND (bif:st_geomfromtext(?minWKT) AS ?geomObj)
+                  BIND (bif:st_z(?geomObj) AS ?minElevation) # Elevation
+              }
+              ORDER BY ASC(?minElevation)
+              LIMIT 1
+          }
+
+          # Convert WKT into geometry objects
+          BIND (bif:st_geomfromtext(?maxWKT) AS ?geomMax)
+          BIND (bif:st_geomfromtext(?minWKT) AS ?geomMin)
+
+          # Compute the distance between the highest and lowest stations
+          BIND (bif:st_distance(?geomMax, ?geomMin, <http://www.opengis.net/def/uom/OGC/1.0/metre>) AS ?distance)
+      }
+
+    "What are the elevations of the gauging stations within a 10 km radius of the 'Oberammergau' gauging station?" : |
+      ## This query is for "Gisingen" station due to limited data uploaded to the triple store. 
+
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+      PREFIX locn: <http://www.w3.org/ns/locn#>
+      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+      PREFIX virtrdf: <http://www.openlinksw.com/schemas/virtrdf#>
+
+      SELECT ?surroundingGaugingName ?sensorSurrounding  ?elevation ?northing ?easting
+      FROM <http://hydroturtle/LamahCE>
+      WHERE {
+
+          # Find the sensor with the name "Gisingen"
+          ?sensorGiven schema:name "Gisingen"; 
+                  geo:hasGeometry ?geomGiven .
+          
+          # Get the WKT representation
+          ?geomGiven geo:asWKT ?wktGiven .
+          
+          # Convert WKT into geometry object using Virtuoso functions
+          BIND (bif:st_geomfromtext(?wktGiven) AS ?geomObjGiven)
+
+          
+          # Find other sensors 
+          ?sensorSurrounding schema:name ?surroundingGaugingName; 
+                  geo:hasGeometry ?geomSurrounding .
+          
+          # Get the WKT representation
+          ?geomSurrounding geo:asWKT ?wktSurrounding .
+          
+          # Convert WKT into geometry object using Virtuoso functions
+          BIND (bif:st_geomfromtext(?wktSurrounding) AS ?geomObjSurrounding)
+
+          
+          # Extract coordinates using Virtuoso spatial functions
+          BIND (bif:st_x(?geomObjSurrounding) AS ?easting)   # Longitude
+          BIND (bif:st_y(?geomObjSurrounding) AS ?northing)  # Latitude
+          BIND (bif:st_z(?geomObjSurrounding) AS ?elevation) # Elevation
+
+          # Exclude the given gauging station from the selection
+          FILTER (?sensorSurrounding != ?sensorGiven)
+
+          # select the surrounding stations 
+          FILTER  bif:st_intersects(?geomObjGiven, ?geomObjSurrounding, 10)  # distance need to given with km 
+
+      }
+
+
+
+
+Context-Specific Questions:
+  General Spatial Analysis of Catchments:
+    "Which catchment has the largest area?" : |
+      # This query is written to select the three catchments with the largest area from datsbase
+
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+      PREFIX locn: <http://www.w3.org/ns/locn#>
+      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+      PREFIX virtrdf: <http://www.openlinksw.com/schemas/virtrdf#>
+
+      SELECT ?guagingStationName ?catchment ?catchmentArea
+      FROM <http://hydroturtle/LamahCE>
+      WHERE {
+          # take the catchement areas of catchements (envthes:30212 is the catchement class)
+          ?catchment rdf:type envthes:30212 ;
+                  n4e_hyd:catchment_area_calculated ?catchmentArea. 
+
+          # find the name of the sensor related with catchement
+          ?sensor n4e_hyd:monitorsCatchment ?catchment;
+                  schema:name ?guagingStationName. 
+      }
+      ORDER BY DESC(?catchmentArea)
+      LIMIT 3
+
+    "Which catchment area has the highest annual precipitation for a selected year (e.g., 2015)?" : |
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+
+      SELECT ?catchment (SUM(?flowRate) AS ?totalAnnualFlowrate) ?catchmentArea
+      FROM <http://hydroturtle/LamahCE>
+      WHERE {
+          ?observation rdf:type sosa:Observation ;
+                      sosa:observedProperty envthes:21242 ;  # Precipitation
+                      sosa:madeBySensor ?sensor ;
+                      sosa:resultTime ?resultTime ;
+                      sosa:hasResult ?result.
+
+          # Retrieve the precipitation value
+          ?result qudt:numericValue ?flowRate;
+                  qudt:unit  unit:M3-PER-SEC .
+
+          # Find catchment monitored by the sensor
+          ?sensor n4e_hyd:monitorsCatchment ?catchment.
+
+          # Find catchment area of the catchment
+          ?catchment n4e_hyd:catchment_area_calculated ?catchmentArea
+
+          # Filter for the selected year
+          BIND(YEAR(?resultTime) AS ?resultYear)
+          FILTER (?resultYear = 2015)
+      }
+      GROUP BY ?catchment ?catchmentArea
+      ORDER BY DESC(?totalAnnualFlowrate)  # Sort by highest precipitation
+      LIMIT 1  # Select only the catchment with the highest precipitation
+
+    "What is the average atmospheric temperature at 2m above catchment 1 for 2010 to 2020?" : |
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+
+      SELECT ?stationName (AVG(?temperatureValue) AS ?averageTemperature)
+      FROM <http://hydroturtle/LamahCE>
+      WHERE {
+          ?observation rdf:type sosa:Observation ;
+                      sosa:observedProperty n4e_hyd:AirTemperature2mAvg ;  # AVG Atmospheric temperature at 2m hiehgh 
+                      sosa:madeBySensor ?sensor ;
+                      sosa:resultTime ?resultTime ;
+                      sosa:hasResult ?result.
+
+          # Extract the numeric temperature value
+          ?result qudt:numericValue ?temperatureValue;
+                  qudt:unit unit:DEG_C.
+
+          # Find sensors monitoring Catchment_1
+          ?sensor n4e_hyd:monitorsCatchment n4e_hyd:catchment_1;
+                  schema:name ?stationName.
+
+          # Filter for the selected time range
+          BIND(YEAR(?resultTime) AS ?resultYear)
+          FILTER (?resultYear >= 2010 && ?resultYear <= 2020)
+      }
+
+  Temporal and Event-Based:  
+
+    "Which month experienced the highest precipitation in Germany in 2012?" : |
+      # the current query is written for flow rate, in Austria because of limited data uploaded into the triple store. 
+
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+      PREFIX locn: <http://www.w3.org/ns/locn#>
+      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+      PREFIX esco: <https://ec.europa.eu/esco/lod/static/model.html#>
+
+      SELECT  ?month 
+              (AVG(?flowRate) AS ?averageMontlyFlowRate) 
+              (COUNT(?flowRate) AS ?noOfMeasurments) 
+              (COUNT(DISTINCT ?station) AS ?numOfStations)
+      FROM <http://hydroturtle/LamahCE>
+      WHERE {
+
+              # Find the observations with precipitation[envthes:30106] (flow rate for this time - envthes:21242) 
+              ?observation rdf:type sosa:Observation ;
+                      sosa:observedProperty envthes:21242 ;
+                      sosa:madeBySensor ?station ;
+                      sosa:resultTime ?resultTime ;
+                      sosa:hasResult ?result .
+  
+              # Access the blank node for QuantityValue
+              ?result rdf:type qudt:QuantityValue ;
+                      qudt:numericValue ?flowRate;
+                      qudt:unit unit:M3-PER-SEC.
+
+              # Find the gauging stations situated in Germanay
+              ?station rdf:type sosa:Sensor ;
+                      esco:isoCountryCodeA3 "AUT".    # This should be changed to "DEU" for Germanay. For the moment only 35 stations uploaded. All are from Austria  
+
+              # extract year and month from result time and assign them to seperate variables ?year and ?month
+              BIND (YEAR(?resultTime) AS ?year)
+              BIND (MONTH(?resultTime) AS ?month)
+           
+              #Filter results of 2012
+              FILTER(?year = 2012)
+      }
+      # Group by monthly
+      GROUP BY ?month 
+      ORDER BY DESC(?averageMontlyFlowRate)
+      LIMIT 3
+
+
+    "In which year did 'OberaBuers (Bruecke L82)' have the most days with minor flooding due to river flow exceeding 5 m³/s?  [this question makes much sense if data is available as water level, but in this data set it is not available.] " : |
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+
+      SELECT ?year (COUNT(DISTINCT ?date) AS ?floodDays)
+      WHERE {
+          # Find observations for river flow
+          ?observation rdf:type sosa:Observation ;
+                      sosa:observedProperty envthes:21242 ;  # River flow
+                      sosa:madeBySensor ?sensor ;
+                      sosa:resultTime ?resultTime ;
+                      sosa:hasResult ?result .
+
+          # Extract river flow value
+          ?result rdf:type qudt:QuantityValue ;
+                  qudt:numericValue ?flowRate ;
+                  qudt:unit unit:M3-PER-SEC .
+
+          # Filter for the location "Buers (Bruecke L82)"
+          ?sensor schema:name "Buers (Bruecke L82)".
+
+          # Filter for flow rates exceeding 5 m³/s
+          FILTER(?flowRate > 5)
+
+          # Extract year and date from the timestamp 
+          BIND(YEAR(?resultTime) AS ?year)
+          ## This is particularly for extract and standardize the date from the timestamp 
+          BIND(STRDT(CONCAT(STR(YEAR(?resultTime)), "-", STR(MONTH(?resultTime)), "-", STR(DAY(?resultTime))), xsd:date) AS ?date)
+      }
+
+      # Group by year to count flood days
+      GROUP BY ?year
+      ORDER BY DESC(?floodDays)
+      LIMIT 5 # Change this to 1 when it only needs to take the year with most of the days of flooding. This provides the top 5 years. 
+
+    "During which five years did the 'Oberammergau' gauging station record the highest number of flood events? # # in here it is assumed that when the flow is above 5 m3/s then flood events occur. This is incorrect. It should be connected to the water level. However, it is not available in this dataset. " : |
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+
+      SELECT ?halfDecade (COUNT(DISTINCT ?date) AS ?floodDays)
+      WHERE {
+          # Find observations for river flow
+          ?observation rdf:type sosa:Observation ;
+                      sosa:observedProperty envthes:21242 ;  # River flow
+                      sosa:madeBySensor ?sensor ;
+                      sosa:resultTime ?resultTime ;
+                      sosa:hasResult ?result .
+
+          # Extract river flow value
+          ?result rdf:type qudt:QuantityValue ;
+                  qudt:numericValue ?flowRate ;
+                  qudt:unit unit:M3-PER-SEC .
+
+          # Filter for the location "Buers (Bruecke L82)"
+          ?sensor schema:name "Buers (Bruecke L82)".
+
+          # Filter for flow rates exceeding 5 m³/s
+          FILTER(?flowRate > 5)
+
+          # Extract year and determine the half-decade period
+          BIND(YEAR(?resultTime) AS ?year)
+          BIND(FLOOR((?year - 1) / 5) * 5 + 1 AS ?halfDecade)  # Computes half-decade periods like 1996-2000, 2001-2005, etc.
+
+          # Extract date from timestamp (only Year-Month-Day, ignoring time)
+          BIND(STRDT(CONCAT(STR(YEAR(?resultTime)), "-", STR(MONTH(?resultTime)), "-", STR(DAY(?resultTime))), xsd:date) AS ?date)
+
+      }
+
+      # Group by half-decade and count flood events
+      GROUP BY ?halfDecade
+      ORDER BY DESC(?floodDays)
+      LIMIT 5
+
+  Specific to Gauging Stations:
+    "What is the elevation of the gauging station with the lowest observed average river flow?" : |
+      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+      PREFIX sosa: <http://www.w3.org/ns/sosa/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+      PREFIX qudt: <https://qudt.org/schema/qudt/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX unit: <https://qudt.org/vocab/unit/>
+      PREFIX schema: <https://schema.org/>
+      PREFIX locn: <http://www.w3.org/ns/locn#>
+      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+
+      SELECT ?gaugingStationName ?elevation (AVG(?flowRate) AS ?avgFlowRate)
+      FROM <http://hydroturtle/LamahCE>
+      WHERE {
+          # Observations of river flow
+          ?observation rdf:type sosa:Observation ;
+                      sosa:observedProperty envthes:21242 ;
+                      sosa:madeBySensor ?sensor ;
+                      sosa:resultTime ?resultTime ;
+                      sosa:hasResult ?result.
+
+          # Access flow rate value
+          ?result qudt:numericValue ?flowRate;
+                  qudt:unit unit:M3-PER-SEC.
+
+          # Link sensor to gauging station
+          ?sensor schema:name ?gaugingStationName;
+                  geo:hasGeometry ?geom.
+
+          # Get the WKT representation of the location
+          ?geom geo:asWKT ?wkt.
+
+          # Convert WKT into geometry object using Virtuoso functions
+          BIND (bif:st_geomfromtext(?wkt) AS ?geomObj)
+
+          # Extract elevation (Z coordinate)
+          BIND (bif:st_z(?geomObj) AS ?elevation)
+
+          # Filter data within a relevant time range (e.g., 2012-2013)
+          BIND (YEAR(?resultTime) AS ?resultYear)
+          #FILTER (?resultYear >= 2012 && ?resultYear <= 2013)
+      }
+      GROUP BY ?gaugingStationName ?elevation
+      ORDER BY ASC(?avgFlowRate)
+      LIMIT 5
+
+
+
+
+
+
