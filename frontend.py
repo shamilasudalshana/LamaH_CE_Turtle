@@ -35,9 +35,9 @@ with header_col2:
     with logo_col1:
         st.image(lamaH_logo, width=70)  # Adjusted size
     with logo_col2:
-        st.image(hydro_turtle_logo, width=80)  # Adjusted size
+        st.image(hydro_turtle_logo, width=140)  # Adjusted size
     with logo_col3:
-        st.image(nfdi4earth_logo, width=100)  # Adjusted size
+        st.image(nfdi4earth_logo, width=180)  # Adjusted size
 
 st.markdown("---")  # Separator
 
