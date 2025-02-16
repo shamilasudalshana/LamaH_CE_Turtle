@@ -1,0 +1,23 @@
+# Ignore virtual environment
+venv/
+env/
+.venv/
+.env/
+.env
+
+# Ignore system files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore IDE config files
+.vscode/
+.idea/
+
+# Ignore large data files (if any)
+*.log
+*.sqlite3
+*.csv
+
+# ignore testing files 
+test.py
