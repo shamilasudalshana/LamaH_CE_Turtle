@@ -126,24 +126,14 @@ with tab2:
         if nl_question.strip():
             with st.spinner("⏳ Processing..."):
                 named_graph = "http://hydroturtle/LamahCE"
-                answer = ask_natural_language_question(nl_question, named_graph)
+                sparql_query_generated, generated_answer, verbalized_ans = ask_natural_language_question(nl_question, named_graph)
 
             st.success("✅ Answer Generated!")
 
-            # to ensure the correct format of the retun 
-            if "\n\nSPARQL Query:\n" in answer and "\n\nExplanation:\n" in answer:
-                _, sparql_query_generated, _, answer_explanation = answer.split("\n\n", 3)
-
-            else:
-                sparql_query_generated, answer_explanation = answer, "Explaination not avaliable."
-
-
-            # Extract SPARQL Query and Explanation from the output
-            #sparql_query_generated, answer_explanation = answer.split("\n\n", 1) if "\n\n" in answer else (answer, "")
-
             # Display the SPARQL Query & Answer Explanation
-            st.text_area("📝 Generated SPARQL Query:", sparql_query_generated, height=150)  # Show SPARQL Query
-            st.text_area("📖 Answer Explanation:", answer_explanation, height=200)  # Show Explanation
+            st.text_area("📝 Generated SPARQL Query:", sparql_query_generated, height=450)  # Show SPARQL Query
+            st.text_area("📝 Generated Answer form SPARQL Query:", generated_answer, height=50)  # Show SPARQL Query
+            st.text_area("📖 Verbalized Answer:", verbalized_ans, height=200)  # Show Explanation
         else:
             st.warning("⚠️ Please enter a question.")
 

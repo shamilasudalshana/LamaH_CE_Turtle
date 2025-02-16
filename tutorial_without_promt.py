@@ -162,7 +162,7 @@ def ask_natural_language_question(question, named_graph):
 
     # Step 1: Generate SPARQL query for the named graph
     sparql_query = generate_sparql(question, named_graph)
-    print(f"Generated and cleaned SPARQL Query:\n{sparql_query}\n")  # Debugging output
+    #print(f"Generated and cleaned SPARQL Query:\n{sparql_query}\n")  # Debugging output
 
     # Step 2: Validate the query
     is_valid, validation_message = validate_sparql(sparql_query, named_graph)
@@ -172,18 +172,18 @@ def ask_natural_language_question(question, named_graph):
     # Step 3: Run the validated query on Virtuoso
     results = query_sparql(sparql_query)
 
-    print("SPARQL Query Execution Results:", results) # Debugging output
+    #print("SPARQL Query Execution Results:", results) # Debugging output
 
     # Step 4: Format the result for readability
     # return format_results(results)
     formatted_answer = format_results(results)
 
     # Step 5: Generate a natural language explanation of the answer
-    explanation = generate_explanation (question, answer=formatted_answer)
+    verbalized_ans = generate_explanation (question, answer=formatted_answer)
 
     # step 6 : Retun both direct and NL explaination
     #return f"Answer: {formatted_answer}\n\nExplaination: {explanation}"
-    return f"SPARQL Query:\n{sparql_query}\n\nExplanation:\n{explanation}"
+    return sparql_query, formatted_answer, verbalized_ans
 
 def format_results(results):
     """Formats SPARQL results into a readable response."""
@@ -221,7 +221,7 @@ def generate_explanation(question, answer):
 # question = "How many triples in this dataset?"
 # question = "How many sensors in this dataset?"
 #question = "how many observations in this dataset?" 
-# question = "What are the coordinates of sensor called 'Bangs'?"
+question = "What are the coordinates of sensor called 'Bangs'?"
 
 # question = "What is the average flow rate observation of this dataset? flow rate is measured by envthes:21242"
 #question = "What it the elevation of the gauging station with the lowest observed average river flow?, flow rate is measured by envthes:21242"
@@ -234,7 +234,7 @@ def generate_explanation(question, answer):
 
 # question = "Where is the 'Gattendorf (Schleuse)' gauging station located? [What are the coordinates]"
 
-question = "What is the distance (length) between the highest and lowest elevation gauging stations (gauging stations is a sensor) in this dataset?"
+# question = "What is the distance (length) between the highest and lowest elevation gauging stations (gauging stations is a sensor) in this dataset?"
 
 named_graph = "http://hydroturtle/LamahCE"
 print("Question:", question)
