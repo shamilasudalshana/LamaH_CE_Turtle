@@ -7,7 +7,9 @@ from dotenv import load_dotenv
 load_dotenv() # to load all the env variables form the env variables
 open_ai_api_key = os.getenv("OPENAI_API_KEY")
 
-open_ai_model = "ft:gpt-4o-2024-08-06:personal::Ay6V9DlJ" # this is the fine tuned model with 10 questions. 
+open_ai_model = "ft:gpt-4o-2024-08-06:personal::Ay6V9DlJ" #this is the fine tuned model with 10 questions.
+#"ft:gpt-4o-2024-08-06:personal::Ay6V9DlJ" - this is the fine tuned model with 10 questions. 
+# "ft:gpt-4o-2024-08-06:personal::B7JJuV3V" # fine tune models with 15 quesions on 2025_03_14. 
 
 # Initialize OpenAI model
 llm = ChatOpenAI(model=open_ai_model, temperature=0, api_key=open_ai_api_key) #gpt-4o, gpt-3.5-turbo, gpt-4o-mini-2024-07-18

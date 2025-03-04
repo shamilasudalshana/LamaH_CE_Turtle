@@ -40,7 +40,7 @@ def extract_questions_sparql_recursive(data, results=[]):
 questions_sparql_pairs = extract_questions_sparql_recursive(yaml_data, [])
 
 # Display the first 5 extracted pairs for verification
-print(questions_sparql_pairs[:5])
+#print(questions_sparql_pairs[:5])
 
 # Create a DataFrame to store results
 results_df = pd.DataFrame(columns=["Question", "Generated SPARQL", "Sample SPARQL", "Jaccard Similarity", "Levenshtein Similarity"])

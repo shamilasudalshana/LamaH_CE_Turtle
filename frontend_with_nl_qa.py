@@ -132,7 +132,7 @@ with tab2:
 
             # Display the SPARQL Query & Answer Explanation
             st.text_area("📝 Generated SPARQL Query:", sparql_query_generated, height=450)  # Show SPARQL Query
-            st.text_area("📝 Generated Answer form SPARQL Query:", generated_answer, height=50)  # Show SPARQL Query
+            st.text_area("📝 Generated Answer form SPARQL Query:", generated_answer, height=75)  # Show SPARQL Query
             st.text_area("📖 Verbalized Answer:", verbalized_ans, height=200)  # Show Explanation
         else:
             st.warning("⚠️ Please enter a question.")
