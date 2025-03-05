@@ -52,73 +52,211 @@ def clean_sparql_query(sparql_query, named_graph):
     return sparql_query.strip()
 
 
-def generate_sparql(question, named_graph):
-    """Uses OpenAI to generate a structured SPARQL query, ensuring correctness."""
+# def generate_sparql(question, named_graph):
+#     """Uses OpenAI to generate a structured SPARQL query, ensuring correctness."""
 
-    prompt = f"""
-    You are an expert in querying RDF datasets using SPARQL. Your task is to convert the following natural language question into a **correct** and **well-structured** SPARQL query.
+#     prompt = f"""
+#     You are an expert in querying RDF datasets using SPARQL. Your task is to convert the following natural language question into a **correct** and **well-structured** SPARQL query.
 
-    ### **Guidelines**
-    1. **Use Correct Prefixes**
-       - `PREFIX sosa: <http://www.w3.org/ns/sosa/>`
-       - `PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>`
-       - `PREFIX qudt: <https://qudt.org/schema/qudt/>`
-       - `PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>`
-       - `PREFIX unit: <https://qudt.org/vocab/unit/>`
-       - `PREFIX schema: <https://schema.org/>`
-       - `PREFIX locn: <http://www.w3.org/ns/locn#>`
-       - `PREFIX geo: <http://www.opengis.net/ont/geosparql#>`
+#     ### **Guidelines**
+#     1. **Use Correct Prefixes**
+#        - `PREFIX sosa: <http://www.w3.org/ns/sosa/>`
+#        - `PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>`
+#        - `PREFIX qudt: <https://qudt.org/schema/qudt/>`
+#        - `PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>`
+#        - `PREFIX unit: <https://qudt.org/vocab/unit/>`
+#        - `PREFIX schema: <https://schema.org/>`
+#        - `PREFIX locn: <http://www.w3.org/ns/locn#>`
+#        - `PREFIX geo: <http://www.opengis.net/ont/geosparql#>`
 
-    2. **Follow Correct Data Structure**
-       - Observations are modeled using `sosa:Observation`.
-       - The observed property is linked using `sosa:observedProperty`.
-       - The result is linked using `sosa:hasResult` (not `sosa:result`).
-       - The numeric value of the result is stored in `qudt:numericValue`.
-       - The unit of measurement is stored in `qudt:unit`.
-       - Observations result time it associated with property 'sosa:resultTime'
+#     2. **Follow Correct Data Structure**
+#        - Observations are modeled using `sosa:Observation`.
+#        - The observed property is linked using `sosa:observedProperty`.
+#        - The result is linked using `sosa:hasResult` (not `sosa:result`).
+#        - The numeric value of the result is stored in `qudt:numericValue`.
+#        - The unit of measurement is stored in `qudt:unit`.
+#        - Observations result time it associated with property 'sosa:resultTime'
 
-    3. **Query Formatting Rules**
-       - make sure brackets are balanced. double check whether every open backet is closed and whether is there any additional closed backet before exicute query. 
-       - **For average flow rate values**, use:
-         ```sparql
-         PREFIX sosa: <http://www.w3.org/ns/sosa/>
-         PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/> 
-         PREFIX qudt: <https://qudt.org/schema/qudt/>
+#     3. **Query Formatting Rules**
+#        - make sure brackets are balanced. double check whether every open backet is closed and whether is there any additional closed backet before exicute query. 
+#        - **For average flow rate values**, use:
+#          ```sparql
+#          PREFIX sosa: <http://www.w3.org/ns/sosa/>
+#          PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/> 
+#          PREFIX qudt: <https://qudt.org/schema/qudt/>
 
-         SELECT (AVG(?flowRate) AS ?averageFlowRate) ?unit 
-         WHERE {{
-           GRAPH <{named_graph}> {{
-             ?obs a sosa:Observation ;
-                  sosa:observedProperty envthes:21242 ;
-                  sosa:hasResult ?result .
-             ?result qudt:numericValue ?flowRate;
-                     qudt:unit ?unit .
-           }}
-         }}
-         ```
-       - Ensure **all opening brackets '{' have a corresponding closing '}' **.
-       - Do **not add extra closing brackets at the end**.
-       - If the question explicitly asks for **a limited number of results**, add a `LIMIT` clause.
-       - If the question requires **counting**, use `COUNT(*)`.
-       - **Ensure the correct namespace for `envthes` is used** (`http://vocabs.lter-europe.net/EnvThes/`).
-       - **Ensure the correct namespace for `qudt:` is used** (`https://qudt.org/schema/qudt/`).
-       - **Do not use unnecessary `FROM` statements**.
-       - Always ensure **proper indentation and readability**.
-       - When generating SPARQL queries, note that sosa:madeBySensor is the inverse of sosa:madeObservation. If the query uses sosa:madeObservation, replace it with ^sosa:madeBySensor.
+#          SELECT (AVG(?flowRate) AS ?averageFlowRate) ?unit 
+#          WHERE {{
+#            GRAPH <{named_graph}> {{
+#              ?obs a sosa:Observation ;
+#                   sosa:observedProperty envthes:21242 ;
+#                   sosa:hasResult ?result .
+#              ?result qudt:numericValue ?flowRate;
+#                      qudt:unit ?unit .
+#            }}
+#          }}
+#          ```
+#        - Ensure **all opening brackets '{' have a corresponding closing '}' **.
+#        - Do **not add extra closing brackets at the end**.
+#        - If the question explicitly asks for **a limited number of results**, add a `LIMIT` clause.
+#        - If the question requires **counting**, use `COUNT(*)`.
+#        - **Ensure the correct namespace for `envthes` is used** (`http://vocabs.lter-europe.net/EnvThes/`).
+#        - **Ensure the correct namespace for `qudt:` is used** (`https://qudt.org/schema/qudt/`).
+#        - **Do not use unnecessary `FROM` statements**.
+#        - Always ensure **proper indentation and readability**.
+#        - When generating SPARQL queries, note that sosa:madeBySensor is the inverse of sosa:madeObservation. If the query uses sosa:madeObservation, replace it with ^sosa:madeBySensor.
 
-    4. Convert the following natural language question into a well-structured SPARQL query.
+#     4. Convert the following natural language question into a well-structured SPARQL query.
 
-        - Use correct ontology classes and properties.
-        - Ensure proper formatting for Virtuoso triple store.
-        - make sure brackets are balanced. double check whether every open backet is closed and whether is there any additional closed backet before exicute query. 
+#         - Use correct ontology classes and properties.
+#         - Ensure proper formatting for Virtuoso triple store.
+#         - make sure brackets are balanced. double check whether every open backet is closed and whether is there any additional closed backet before exicute query. 
 
         
-        ### **Input Question**
-        {question}
+#         ### **Input Question**
+#         {question}
 
-        ### **Output:**
-        Generate only the SPARQL query without any additional text. **Ensure correct bracket placement to avoid syntax errors.**
-        """
+#         ### **Output:**
+#         Generate only the SPARQL query without any additional text. **Ensure correct bracket placement to avoid syntax errors.**
+#         """
+
+#     # Generate a SPARQL query using OpenAI
+#     response = llm.invoke(prompt)
+
+#     # Extract the generated SPARQL query
+#     sparql_query = response.content.strip()
+
+#     # Clean the SPARQL query to remove code block markers
+#     if sparql_query.startswith("```"):
+#         sparql_query = sparql_query.replace("```sparql", "").replace("```", "").strip()
+
+#     # Apply corrections if the query structure is incorrect
+#     sparql_query = clean_sparql_query(sparql_query, named_graph)
+
+#     return sparql_query
+
+def generate_sparql(question, named_graph):
+    """Uses OpenAI to generate a structured SPARQL query, ensuring correctness for Virtuoso."""
+
+    prompt = f"""
+    You are an expert in querying RDF datasets using SPARQL **for the Virtuoso triple store**.  
+    Your task is to convert the following natural language question into a **correct**, **well-structured**, and **Virtuoso-compatible** SPARQL query.
+
+    ### **Guidelines**
+    1. **Use Correct Prefixes**  
+       ```
+       PREFIX sosa: <http://www.w3.org/ns/sosa/>
+       PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+       PREFIX qudt: <https://qudt.org/schema/qudt/>
+       PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+       PREFIX unit: <https://qudt.org/vocab/unit/>
+       PREFIX schema: <https://schema.org/>
+       PREFIX locn: <http://www.w3.org/ns/locn#>
+       PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+       PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+       ```
+
+    2. **Follow Correct Data Structure**  
+       - Observations are modeled using `sosa:Observation`.  
+       - The observed property is linked using `sosa:observedProperty`.  
+       - The result is linked using `sosa:hasResult` (not `sosa:result`).  
+       - The numeric value of the result is stored in `qudt:numericValue`.  
+       - The unit of measurement is stored in `qudt:unit`.  
+       - The observation result time is associated with `sosa:resultTime`.  
+       - Spatial data is stored using `geo:asWKT`.  
+
+    3. **Query Formatting Rules**  
+       - Ensure **balanced brackets**: double-check that every `{" has a corresponding "}`.  
+       - **Use LIMIT** when the question asks for a specific number of results.  
+       - **Use COUNT(*)** when the question asks for a count.  
+       - **Use proper namespaces** (`envthes:`, `qudt:`) without errors.  
+       - **For spatial queries, use Virtuoso-specific functions**:
+         - `bif:st_x()`, `bif:st_y()`, `bif:st_z()` for extracting coordinates.  
+         - `bif:st_distance()` for geodesic distance.  
+         - `bif:st_intersects()` for spatial relationships.  
+
+    4. **Examples for Reference (Few-Shot Learning)**  
+
+    **Example 1: Location of a gauging station**  
+    **Question:** "Where is the 'Schlehdorf' gauging station located?"  
+    **SPARQL Query:**
+    ```sparql
+    PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+    PREFIX schema: <https://schema.org/>
+
+    SELECT ?geomObj ?easting ?northing ?elevation
+    WHERE {{
+      GRAPH <{named_graph}> {{
+        ?sensor schema:name "Schlehdorf" ;
+                geo:hasGeometry ?geom .
+        ?geom geo:asWKT ?geomObj.
+        BIND (bif:st_x(?geomObj) AS ?easting)
+        BIND (bif:st_y(?geomObj) AS ?northing)
+        BIND (bif:st_z(?geomObj) AS ?elevation)
+      }}
+    }}
+    ```
+
+    **Example 2: Highest annual precipitation catchment**  
+    **Question:** "Which catchment area recorded the highest annual precipitation in 2015?"  
+    **SPARQL Query:**
+    ```sparql
+    PREFIX sosa: <http://www.w3.org/ns/sosa/>
+    PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+    PREFIX qudt: <https://qudt.org/schema/qudt/>
+    PREFIX schema: <https://schema.org/>
+
+    SELECT ?catchment (SUM(?precipitation) AS ?totalAnnualPrecipitation) ?unit
+    WHERE {{
+      GRAPH <{named_graph}> {{
+        ?observation a sosa:Observation ;
+                     sosa:observedProperty envthes:30106 ;
+                     sosa:madeBySensor ?sensor ;
+                     sosa:resultTime ?resultTime ;
+                     sosa:hasResult ?result.
+        ?result qudt:numericValue ?precipitation;
+                qudt:unit ?unit.
+        ?sensor n4e_hyd:monitorsCatchment ?catchment.
+        FILTER(YEAR(?resultTime) = 2015)
+      }}
+    }}
+    GROUP BY ?catchment ?unit
+    ORDER BY DESC(?totalAnnualPrecipitation)
+    LIMIT 1
+    ```
+
+    **Example 3: Average flow rate calculation**  
+    **Question:** "What is the average flow rate at a station?"  
+    **SPARQL Query:**
+    ```sparql
+    PREFIX sosa: <http://www.w3.org/ns/sosa/>
+    PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/> 
+    PREFIX qudt: <https://qudt.org/schema/qudt/>
+
+    SELECT (AVG(?flowRate) AS ?averageFlowRate) ?unit 
+    WHERE {{
+      GRAPH <{named_graph}> {{
+        ?obs a sosa:Observation ;
+             sosa:observedProperty envthes:21242 ;
+             sosa:hasResult ?result .
+        ?result qudt:numericValue ?flowRate;
+                qudt:unit ?unit .
+      }}
+    }}
+    ```
+    
+    5. **Convert the following natural language question into a well-structured SPARQL query.**  
+       - Use the correct ontology classes and properties.  
+       - Ensure proper formatting for Virtuoso.  
+       - Check for **bracket balance** and **namespace correctness**.  
+       
+    ### **Input Question**  
+    {question}
+
+    ### **Output:**  
+    Generate only the **SPARQL query** without any additional text.  
+    **Ensure correct bracket placement to avoid syntax errors.**
+    """
 
     # Generate a SPARQL query using OpenAI
     response = llm.invoke(prompt)
@@ -134,6 +272,7 @@ def generate_sparql(question, named_graph):
     sparql_query = clean_sparql_query(sparql_query, named_graph)
 
     return sparql_query
+
 
 
 

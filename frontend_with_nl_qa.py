@@ -12,7 +12,7 @@ st.set_page_config(page_title="LamaH-CE SPARQL Query Interface", page_icon="🌍
 
 # Load questions from YAML
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-QUESTIONS_PATH = os.path.join(BASE_DIR, "questions.yaml")
+QUESTIONS_PATH = os.path.join(BASE_DIR, "questions_validation.yaml")
 
 def load_questions():
     with open(QUESTIONS_PATH, "r", encoding="utf-8") as file:

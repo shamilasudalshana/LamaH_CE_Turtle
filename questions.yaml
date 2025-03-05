@@ -25,100 +25,89 @@ Question templates using spatial facets:
       }
 
     "Where are the gauging stations located within the catchment areas for high annual precipitation in 2015?"  : |
-      #[Wrote query for flow rate, for precipitation would be bit different since it is a catchment TS, flow is available as guage TS ]
-      
-      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
-      PREFIX sosa: <http://www.w3.org/ns/sosa/>
-      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
-      PREFIX qudt: <https://qudt.org/schema/qudt/>
-      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-      PREFIX unit: <https://qudt.org/vocab/unit/>
-      PREFIX schema: <https://schema.org/>
-      PREFIX locn: <http://www.w3.org/ns/locn#>
-      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+        PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+        PREFIX sosa: <http://www.w3.org/ns/sosa/>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+        PREFIX qudt: <https://qudt.org/schema/qudt/>
+        PREFIX unit: <https://qudt.org/vocab/unit/>
+        PREFIX schema: <https://schema.org/>
+        PREFIX geo: <http://www.opengis.net/ont/geosparql#>
 
-      SELECT ?stationName ?easting ?northing (SUM(?flowRate) AS ?totalFlowRate)
-      FROM <http://hydroturtle/LamahCE>
-      WHERE {
+        SELECT ?stationName ?easting ?northing (SUM(?precipitation) AS ?totalPrecipitation)
+        WHERE { GRAPH <http://hydroturtle/LamahCE>
+                {# Find the observations with precipitation[envthes:30106] (flow rate for this time - envthes:21242) 
+                ?observation rdf:type sosa:Observation ;
+                        sosa:observedProperty envthes:30106;
+                        sosa:madeBySensor ?station ;
+                        sosa:resultTime ?resultTime ;
+                        sosa:hasResult ?result .
 
-          # Find the observations with precipitation[envthes:30106] (flow rate for this time - envthes:21242) 
-          ?observation rdf:type sosa:Observation ;
-                    sosa:observedProperty envthes:21242 ;
-                    sosa:madeBySensor ?station ;
-                    sosa:resultTime ?resultTime ;
-                    sosa:hasResult ?result .
+                #Filter results of 2015
+                FILTER(YEAR(?resultTime) = 2015)
 
-            #Filter results of 2015
-            FILTER(YEAR(?resultTime) = 2015)
+                # Access the blank node for QuantityValue
+                ?result rdf:type qudt:QuantityValue ;
+                        qudt:numericValue ?precipitation.
 
-            # Access the blank node for QuantityValue
-          ?result rdf:type qudt:QuantityValue ;
-                qudt:numericValue ?flowRate;
-                qudt:unit unit:M3-PER-SEC.
+                # Retrieve gauging station and location details
+                ?station rdf:type sosa:Sensor ;
+                        schema:name ?stationName ;
+                        geo:hasGeometry ?locationGeometry .
 
-          # Retrieve gauging station and location details
-          ?station rdf:type sosa:Sensor ;
-                schema:name ?stationName ;
-                geo:hasGeometry ?locationGeometry .
+                ## Get the WKT representation
+                ?locationGeometry geo:asWKT ?geomObj.
 
-          ## Get the WKT representation
-          ?locationGeometry geo:asWKT ?wkt .
+                
+                # Extract coordinates using Virtuoso spatial functions
+                BIND (bif:st_x(?geomObj) AS ?easting)   # Longitude
+                BIND (bif:st_y(?geomObj) AS ?northing)  # Latitude
 
-          # Convert WKT into geometry object using Virtuoso functions
-          BIND (bif:st_geomfromtext(?wkt) AS ?geomObj)
-          
-          # Extract coordinates using Virtuoso spatial functions
-          BIND (bif:st_x(?geomObj) AS ?easting)   # Longitude
-          BIND (bif:st_y(?geomObj) AS ?northing)  # Latitude
+        }}
 
-      }
-
-      # Group by station to sum precipitation values (this one is for flow rate for now) for each station in 2015
-      GROUP BY ?stationName ?easting ?northing
-      ORDER BY DESC(?totalFlowRate)
-      LIMIT 3
+        # Group by station to sum precipitation values (this one is for flow rate for now) for each station in 2015
+        GROUP BY ?stationName ?easting ?northing
+        ORDER BY DESC(?totalPrecipitation)
+        LIMIT 3
 
     "Where are the largest 5 catchment areas in this dataset?" : |
-      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
-      PREFIX sosa: <http://www.w3.org/ns/sosa/>
-      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
-      PREFIX qudt: <https://qudt.org/schema/qudt/>
-      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-      PREFIX unit: <https://qudt.org/vocab/unit/>
-      PREFIX schema: <https://schema.org/>
-      PREFIX locn: <http://www.w3.org/ns/locn#>
-      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
 
-      SELECT ?stationName ?catchment ?catchmentArea ?easting ?northing
-      FROM <http://hydroturtle/LamahCE>
-      WHERE {
+        PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+        PREFIX sosa: <http://www.w3.org/ns/sosa/>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+        PREFIX qudt: <https://qudt.org/schema/qudt/>
+        PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+        PREFIX unit: <https://qudt.org/vocab/unit/>
+        PREFIX schema: <https://schema.org/>
+        PREFIX locn: <http://www.w3.org/ns/locn#>
+        PREFIX geo: <http://www.opengis.net/ont/geosparql#>
 
-            #find the station name 
-            ?sensor schema:name ?stationName;
-                          n4e_hyd:monitorsCatchment ?catchment;
-                          geo:hasGeometry ?locationGeometry .
+        SELECT ?stationName ?catchment ?catchmentArea ?easting ?northing
+        FROM <http://hydroturtle/LamahCE>
+        WHERE {
 
-            # Find the catchment area
-            ?catchment n4e_hyd:catchment_area_calculated ?catchmentArea.
+                #find the station name 
+                ?sensor schema:name ?stationName;
+                                n4e_hyd:monitorsCatchment ?catchment;
+                                geo:hasGeometry ?locationGeometry .
 
-            # This is addition to the question
-            ## Get the WKT representation
-            ?locationGeometry geo:asWKT ?wkt . 
+                # Find the catchment area
+                ?catchment n4e_hyd:catchment_area_calculated ?catchmentArea.
 
-            ## Convert WKT into geometry object using Virtuoso functions
-            BIND (bif:st_geomfromtext(?wkt) AS ?geomObj)
-          
-            ## Extract coordinates using Virtuoso spatial functions
-            BIND (bif:st_x(?geomObj) AS ?easting)   # Longitude
-            BIND (bif:st_y(?geomObj) AS ?northing)  # Latitude
+                # This is addition to the question
+                ## Get the WKT representation
+                ?locationGeometry geo:asWKT ?geomObj. 
 
-      }
+                ## Extract coordinates using Virtuoso spatial functions
+                BIND (bif:st_x(?geomObj) AS ?easting)   # Longitude
+                BIND (bif:st_y(?geomObj) AS ?northing)  # Latitude
 
-      # take the largest catchment area.  
-      ORDER BY DESC(?catchmentArea)
-      LIMIT 5
+        }
+
+        # take the largest catchment area.  
+        ORDER BY DESC(?catchmentArea)
+        LIMIT 5
 
 
   Object - Boundary:
@@ -137,13 +126,13 @@ Question templates using spatial facets:
       PREFIX geo: <http://www.opengis.net/ont/geosparql#>
       PREFIX virtrdf: <http://www.openlinksw.com/schemas/virtrdf#>
 
-      SELECT ?neighbourCatchment ?catchment ?maxFlow ?time ?neighbourCatchmentWKT 
+      SELECT ?neighbourCatchment ?catchment ?maxFlow ?time ?geomObjCatNeig 
       FROM <http://hydroturtle/LamahCE>
       WHERE {
           # Find the catchment with the highest flow rate between 2012-2016
           {
 
-              SELECT ?catchment ?catchmentWKT (MAX(?flowRate) AS ?maxFlow) ?time
+              SELECT ?catchment ?geomObjCat (MAX(?flowRate) AS ?maxFlow) ?time
               WHERE {
                   # Find the observations with precipitation[envthes:30106] (flow rate for this time - envthes:21242) - 
                   # precipitation can be written as directly associalted with catchment as observerd property 
@@ -160,7 +149,7 @@ Question templates using spatial facets:
                   # Take the catchment geometry as WKT
                   ?sensor n4e_hyd:monitorsCatchment ?catchment .
                   ?catchment geo:hasGeometry ?catchmentGeometry.
-                  ?catchmentGeometry geo:asWKT ?catchmentWKT.
+                  ?catchmentGeometry geo:asWKT ?geomObjCat.
 
                 FILTER (?time >= "2012-01-01"^^xsd:dateTime && ?time <= "2015-12-31"^^xsd:dateTime)
                     #FILTER (xsd:dateTime(?time) >= "2016-01-01T00:00:00Z"^^xsd:dateTime &&
@@ -175,11 +164,11 @@ Question templates using spatial facets:
                   ?neighbourCatchment rdf:type envthes:30212 ;
                                       geo:hasGeometry ?neighbourCatchmentGeom .
 
-                  ?neighbourCatchmentGeom geo:asWKT ?neighbourCatchmentWKT .
+                  #?neighbourCatchmentGeom geo:asWKT ?geomObjCatNeig .
 
                   # Convert WKT into geometry object using Virtuoso functions
-                  BIND (bif:st_geomfromtext(?catchmentWKT) AS ?geomObjCat)
-                  BIND (bif:st_geomfromtext(?neighbourCatchmentWKT ) AS ?geomObjCatNeig)
+                  #BIND (bif:st_geomfromtext(?catchmentWKT) AS ?geomObjCat)
+                  #BIND (bif:st_geomfromtext(?neighbourCatchmentWKT ) AS ?geomObjCatNeig)
 
                   FILTER (?neighbourCatchment != ?catchment) # Exclude the max flow catchment
                   FILTER bif:st_intersects(?geomObjCat, ?geomObjCatNeig, 0) # 0 distance means touching borders
@@ -657,59 +646,53 @@ Question templates using spatial facets:
           BIND (bif:st_distance(?geomMax, ?geomMin, <http://www.opengis.net/def/uom/OGC/1.0/metre>) AS ?distance)
       }
 
-    "What are the elevations of the gauging stations within a 10 km radius of the 'Oberammergau' gauging station?" : |
-      ## This query is for "Gisingen" station due to limited data uploaded to the triple store. 
+    "What are the elevations and the distance of the gauging stations within a 10 km radius of the 'Gisingen' gauging station?" : |
+        PREFIX sosa: <http://www.w3.org/ns/sosa/>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX unit: <https://qudt.org/vocab/unit/>
+        PREFIX schema: <https://schema.org/>
+        PREFIX geo: <http://www.opengis.net/ont/geosparql#>
 
-      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
-      PREFIX sosa: <http://www.w3.org/ns/sosa/>
-      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
-      PREFIX qudt: <https://qudt.org/schema/qudt/>
-      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-      PREFIX unit: <https://qudt.org/vocab/unit/>
-      PREFIX schema: <https://schema.org/>
-      PREFIX locn: <http://www.w3.org/ns/locn#>
-      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
-      PREFIX virtrdf: <http://www.openlinksw.com/schemas/virtrdf#>
+        SELECT ?surroundingGaugingName ?sensorSurrounding  ?elevation ?distance ?northing ?easting
+        WHERE { GRAPH <http://hydroturtle/LamahCE>
+        {
+                # Find the sensor with the name "Gisingen"
+                ?sensorGiven a sosa:Sensor;
+                                schema:name "Gisingen"; 
+                                geo:hasGeometry ?geomGiven .
+                
+                # Get the WKT representation
+                ?geomGiven geo:asWKT ?geomObjGiven .
+                
+                # Convert WKT into geometry object using Virtuoso functions
+                # BIND (bif:st_geomfromtext(?wktGiven) AS ?geomObjGiven)
 
-      SELECT ?surroundingGaugingName ?sensorSurrounding  ?elevation ?northing ?easting
-      FROM <http://hydroturtle/LamahCE>
-      WHERE {
+                
+                # Find other sensors 
+                ?sensorSurrounding a sosa:Sensor;
+                                        schema:name ?surroundingGaugingName; 
+                                        geo:hasGeometry ?geomSurrounding .
+                
+                # Get the WKT representation
+                ?geomSurrounding geo:asWKT ?geomObjSurrounding .
+                
+                # Convert WKT into geometry object using Virtuoso functions
+                # BIND (bif:st_geomfromtext(?wktSurrounding) AS ?geomObjSurrounding)
 
-          # Find the sensor with the name "Gisingen"
-          ?sensorGiven schema:name "Gisingen"; 
-                  geo:hasGeometry ?geomGiven .
-          
-          # Get the WKT representation
-          ?geomGiven geo:asWKT ?wktGiven .
-          
-          # Convert WKT into geometry object using Virtuoso functions
-          BIND (bif:st_geomfromtext(?wktGiven) AS ?geomObjGiven)
+                
+                # Extract coordinates using Virtuoso spatial functions
+                BIND (bif:st_x(?geomObjSurrounding) AS ?easting)   # Longitude
+                BIND (bif:st_y(?geomObjSurrounding) AS ?northing)  # Latitude
+                BIND (bif:st_z(?geomObjSurrounding) AS ?elevation) # Elevation
 
-          
-          # Find other sensors 
-          ?sensorSurrounding schema:name ?surroundingGaugingName; 
-                  geo:hasGeometry ?geomSurrounding .
-          
-          # Get the WKT representation
-          ?geomSurrounding geo:asWKT ?wktSurrounding .
-          
-          # Convert WKT into geometry object using Virtuoso functions
-          BIND (bif:st_geomfromtext(?wktSurrounding) AS ?geomObjSurrounding)
+                # Exclude the given gauging station from the selection
+                FILTER (?sensorSurrounding != ?sensorGiven)
 
-          
-          # Extract coordinates using Virtuoso spatial functions
-          BIND (bif:st_x(?geomObjSurrounding) AS ?easting)   # Longitude
-          BIND (bif:st_y(?geomObjSurrounding) AS ?northing)  # Latitude
-          BIND (bif:st_z(?geomObjSurrounding) AS ?elevation) # Elevation
-
-          # Exclude the given gauging station from the selection
-          FILTER (?sensorSurrounding != ?sensorGiven)
-
-          # select the surrounding stations 
-          FILTER  bif:st_intersects(?geomObjGiven, ?geomObjSurrounding, 10)  # distance need to given with km 
-
-      }
+                # select the surrounding stations 
+                FILTER  bif:st_intersects(?geomObjGiven, ?geomObjSurrounding, 0.12 )  # distance need to given in degrees since geomatric objects are in WGS84 coordinates. 
+                BIND (bif:st_distance(?geomObjGiven, ?geomObjSurrounding, unit:KiloM ) AS ?distance)
+        }
+        }
 
 
 
@@ -723,17 +706,12 @@ Context-Specific Questions:
       PREFIX sosa: <http://www.w3.org/ns/sosa/>
       PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
       PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
-      PREFIX qudt: <https://qudt.org/schema/qudt/>
-      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-      PREFIX unit: <https://qudt.org/vocab/unit/>
       PREFIX schema: <https://schema.org/>
-      PREFIX locn: <http://www.w3.org/ns/locn#>
-      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
-      PREFIX virtrdf: <http://www.openlinksw.com/schemas/virtrdf#>
 
       SELECT ?guagingStationName ?catchment ?catchmentArea
       FROM <http://hydroturtle/LamahCE>
-      WHERE {
+      WHERE { GRAPH <http://hydroturtle/LamahCE>
+          {
           # take the catchement areas of catchements (envthes:30212 is the catchement class)
           ?catchment rdf:type envthes:30212 ;
                   n4e_hyd:catchment_area_calculated ?catchmentArea. 
@@ -742,8 +720,9 @@ Context-Specific Questions:
           ?sensor n4e_hyd:monitorsCatchment ?catchment;
                   schema:name ?guagingStationName. 
       }
+      }
       ORDER BY DESC(?catchmentArea)
-      LIMIT 3
+      LIMIT 1
 
     "Which catchment area has the highest annual precipitation for a selected year (e.g., 2015)?" : |
       PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>

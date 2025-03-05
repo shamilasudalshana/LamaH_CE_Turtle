@@ -70,7 +70,7 @@ Question templates using spatial facets:
         ORDER BY DESC(?totalPrecipitation)
         LIMIT 3
 
-    "Where are the largest 5 catchment areas in this dataset?" : |
+    "What re are the largest five catchment areas in this dataset?" : |
       PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
       PREFIX schema: <https://schema.org/>
       PREFIX geo: <http://www.opengis.net/ont/geosparql#>
@@ -92,7 +92,7 @@ Question templates using spatial facets:
 
 
   Object - Boundary:
-    "What are the boundaries of the catchment with the highest precipitation between 2012 and 2015 (including both the years 2012 and 2015)?": |
+    "Which catchments share a boundary with the catchment that recorded the highest total precipitation between 2012 and 2015 (inclusive), and what are their boundaries?": |
  
       PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
       PREFIX sosa: <http://www.w3.org/ns/sosa/>
@@ -148,7 +148,7 @@ Question templates using spatial facets:
 
               }}
 
-    "What is the boundary of the 'Garsella' gauging station area for discharge monitoring? ": |
+    "What are the names of the gauging stations whose catchment areas share a boundary with the catchment of the 'Garsella' gauging station?": |
         PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
         PREFIX sosa: <http://www.w3.org/ns/sosa/>
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -213,7 +213,7 @@ Question templates using spatial facets:
       LIMIT 1
 
     
-    "What is the average annual precipitation in catchment 1 for the period between 2012 and 2015?" : |
+    "What is the average annual precipitation in Catchment 1 (n4e_hyd:catchment_1)during the period from 2012 to 2015, inclusive?" : |
       PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
       PREFIX sosa: <http://www.w3.org/ns/sosa/>
       PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -254,7 +254,7 @@ Question templates using spatial facets:
       }}
 
 
-    "What are the average annual flow rates at Gauging Station 1 for each year from 2012 to 2015?" : |
+    "What are the average annual flow rates at Gauging Station 1 (n4e_hyd:sensor_1) for each year from 2012 to 2015, inclusive?" : |
       PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
       PREFIX sosa: <http://www.w3.org/ns/sosa/>
       PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -315,46 +315,46 @@ Question templates using spatial facets:
       }
 
     
-    "What is the highest average monthly evaporation recorded at catchment 2 over the last decade? and the name of the guaging station" : |
+    "What is the highest average monthly evaporation recorded at any catchment between 2000 and 2009 (inclusive), and what is the name of the associated gauging station? evaporation is envthes:21299" : |
 
-      PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
-      PREFIX sosa: <http://www.w3.org/ns/sosa/>
-      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
-      PREFIX qudt: <https://qudt.org/schema/qudt/>
-      PREFIX unit: <https://qudt.org/vocab/unit/>
-      PREFIX schema: <https://schema.org/>
+        PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
+        PREFIX sosa: <http://www.w3.org/ns/sosa/>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+        PREFIX qudt: <https://qudt.org/schema/qudt/>
+        PREFIX unit: <https://qudt.org/vocab/unit/>
+        PREFIX schema: <https://schema.org/>
 
-      SELECT ?resultMonth (SUM(?evapotranspiration) AS ?monthlyTolalEvapotranspiration) ?unit ?guagingStationName
-      WHERE { GRAPH <http://hydroturtle/LamahCE> 
-            {
-              # Find the observations with evapotranspiration[envthes:21299] 
-              # precipitation can be written as directly associalted with catchment as observerd property 
-              ?observation rdf:type sosa:Observation ;
-                  sosa:observedProperty envthes:21299 ;
-                  sosa:madeBySensor ?sensor ;
-                  sosa:resultTime ?resultTime ;
-                  sosa:hasResult ?result.
+        SELECT ?resultMonth (SUM(?evapotranspiration) AS ?monthlyTolalEvapotranspiration) ?unit ?guagingStationName
+        WHERE { GRAPH <http://hydroturtle/LamahCE> 
+              {
+                # Find the observations with evapotranspiration[envthes:21299] 
+                # precipitation can be written as directly associalted with catchment as observerd property 
+                ?observation rdf:type sosa:Observation ;
+                    sosa:observedProperty envthes:21299 ;
+                    sosa:madeBySensor ?sensor ;
+                    sosa:resultTime ?resultTime ;
+                    sosa:hasResult ?result.
 
-              ## # Access the blank node to retrieve the precipitation value [for this case used flow rate due to uploaded data for the moment to triple store ]
-              ?result qudt:numericValue ?evapotranspiration;
-                      qudt:unit  ?unit.
+                ## # Access the blank node to retrieve the precipitation value [for this case used flow rate due to uploaded data for the moment to triple store ]
+                ?result qudt:numericValue ?evapotranspiration;
+                        qudt:unit  ?unit.
 
-              # find catchment related with sensor 
-              ?sensor n4e_hyd:monitorsCatchment ?catchment;
-                      schema:name ?guagingStationName
+                # find catchment related with sensor 
+                ?sensor n4e_hyd:monitorsCatchment ?catchment;
+                        schema:name ?guagingStationName
 
-              # Extract the year and month assigned to ?resultYear and ?resultMonth directly 
-              BIND (YEAR(?resultTime) AS ?resultYear)
-              BIND (MONTH(?resultTime)AS ?resultMonth)
+                # Extract the year and month assigned to ?resultYear and ?resultMonth directly 
+                BIND (YEAR(?resultTime) AS ?resultYear)
+                BIND (MONTH(?resultTime)AS ?resultMonth)
 
-              # Filter and assign to ?year [this query is written between 2012 to 2014 for the moment data is uploaded]
-              FILTER (?resultYear >= 2012 && ?resultYear <= 2013)
-          }
-          }
-          GROUP BY ?resultMonth ?guagingStationName ?unit
-          ORDER BY DESC(?monthlyTolalEvapotranspiration)
-          #LIMIT 1   # can use limit to see only the maximum
+                # Filter and assign to ?year [
+                FILTER (?resultYear >= 2000 && ?resultYear <= 2009)
+            }
+            }
+            GROUP BY ?resultMonth ?guagingStationName ?unit
+            ORDER BY DESC(?monthlyTolalEvapotranspiration)
+            LIMIT 1   # can use limit to see only the maximum
 
     "What is the all-time minimum and maximum river flow observed at the 'Schwarzach' gauging station?" : |
 
@@ -416,7 +416,7 @@ Question templates using spatial facets:
           }
           GROUP BY ?guagingStationName ?unit #can remove GROUP BY - specially, only one gauging station is used. 
 
-    "How many annual average frost days (days with temperatures below 0°C) were recorded at the 'Bangs' gauging station from 2010 to 2020?" : |
+    "How many annual average frost days (defined as days with temperatures below 0°C) were recorded at the 'Bangs' gauging station between 2010 and 2020?, Temperature can be taken from n4e_hyd:AirTemperature2mAvg" : |
       #### need to double check the query . answers cannot check some part of the TTL files hasn't upload when I try to upload catchment 1 [Bangs]time series .
       #### Most liketly this is incorrect 
 
@@ -463,49 +463,48 @@ Question templates using spatial facets:
         ORDER BY ?year
 
   Network - Spatial Relationships:
-    "What is the spatial relationship (distance, elevation difference)  between the 'Bangs' and 'Loruens-Aeule' gauging stations?" : |
+    "What is the spatial relationship between the 'Bangs' and 'Loruens-Aeule' gauging stations in terms of distance and elevation difference?" : |
 
-      PREFIX sosa: <http://www.w3.org/ns/sosa/>
-      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-      PREFIX schema: <https://schema.org/>
-      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+        PREFIX sosa: <http://www.w3.org/ns/sosa/>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX schema: <https://schema.org/>
+        PREFIX geo: <http://www.opengis.net/ont/geosparql#>
 
-      SELECT ?distance  ?elevDiffBeschlingMinusGarsella ?geomObjBeschling ?geomObjGarsella ?elevDiffBeschlingMinusGarsella
-      WHERE { GRAPH <http://hydroturtle/LamahCE> 
-       {
-          # Find the sensor with the name "Beschling"
-          ?sensorBeschling schema:name "Beschling" ; 
-                  geo:hasGeometry ?geomBeschling .
-          
-          # Get the WKT representation
-          ?geomBeschling geo:asWKT ?geomObjBeschling .
-          
-          # Extract coordinates using Virtuoso spatial functions
-          BIND (bif:st_x(?geomObjBeschling) AS ?eastingBeschling)   # Longitude
-          BIND (bif:st_y(?geomObjBeschling) AS ?northingBeschling)  # Latitude
-          BIND (bif:st_z(?geomObjBeschling) AS ?elevationBeschling) # Elevation
+        SELECT ?distance  ?elevDiffBeschlingMinusGarsella ?geomObjBangs ?geomObjLoruensAeule ?elevDiffBeschlingMinusGarsella
+        WHERE { GRAPH <http://hydroturtle/LamahCE> 
+        {
+            # Find the sensor with the name "Bangs"
+            ?sensorBeschling schema:name "Bangs" ; 
+                    geo:hasGeometry ?geomBangs .
+            
+            # Get the WKT representation
+            ?geomBangs geo:asWKT ?geomObjBangs .
+            
+            # Extract coordinates using Virtuoso spatial functions
+            BIND (bif:st_x(?geomObjBangs) AS ?eastingBangs)   # Longitude
+            BIND (bif:st_y(?geomObjBangs) AS ?northingBangs)  # Latitude
+            BIND (bif:st_z(?geomObjBangs) AS ?elevationBangs) # Elevation
 
 
-          # Find the sensor with the name "Garsella"
-          ?sensorGarsella schema:name "Garsella" ; 
-                  geo:hasGeometry ?geomGarsella .
-          
-          # Get the WKT representation
-          ?geomGarsella geo:asWKT ?geomObjGarsella .
-          
-          # Extract coordinates using Virtuoso spatial functions
-          BIND (bif:st_x(?geomObjGarsella) AS ?eastingGarsella)   # Longitude
-          BIND (bif:st_y(?geomObjGarsella) AS ?northingGarsella)  # Latitude
-          BIND (bif:st_z(?geomObjGarsella) AS ?elevationGarsella) # Elevation
-          
-          # Compute geodesic distance in meters
-          BIND (bif:st_distance(?geomObjBeschling, ?geomObjGarsella, <http://www.opengis.net/def/uom/OGC/1.0/metre>) AS ?distance)
-          BIND ((?elevationBeschling-?elevationGarsella) as ?elevDiffBeschlingMinusGarsella)
+            # Find the sensor with the name "Loruens-Aeule"
+            ?sensorLoruensAeule schema:name "Loruens-Aeule" ; 
+                    geo:hasGeometry ?geomLoruensAeule .
+            
+            # Get the WKT representation
+            ?geomLoruensAeule geo:asWKT ?geomObjLoruensAeule .
+            
+            # Extract coordinates using Virtuoso spatial functions
+            BIND (bif:st_x(?geomObjLoruensAeule) AS ?eastingLoruensAeule)   # Longitude
+            BIND (bif:st_y(?geomObjLoruensAeule) AS ?northingLoruensAeule)  # Latitude
+            BIND (bif:st_z(?geomObjLoruensAeule) AS ?elevationLoruensAeule) # Elevation
+            
+            # Compute geodesic distance in meters
+            BIND (bif:st_distance(?geomObjBangs, ?geomObjLoruensAeule, <http://www.opengis.net/def/uom/OGC/1.0/metre>) AS ?distance)
+            BIND ((?elevationBangs-?elevationLoruensAeule) as ?elevDiffBeschlingMinusGarsella)
 
-      }
-      }
-
-    "What is the distance between the highest and lowest elevation gauging stations in this dataset?" : |
+        }
+        }
+    "What is the distance between the gauging stations with the highest and lowest elevations in the dataset?" : |
       PREFIX sosa: <http://www.w3.org/ns/sosa/>
       PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
       PREFIX schema: <https://schema.org/>
@@ -621,7 +620,7 @@ Context-Specific Questions:
       ORDER BY DESC(?catchmentArea)
       LIMIT 1
 
-    "Which catchment area has the highest annual precipitation for a selected year (e.g., 2015)?" : |
+    "Which catchment recorded the highest annual precipitation in 2015?" : |
       PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
       PREFIX sosa: <http://www.w3.org/ns/sosa/>
       PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -658,7 +657,7 @@ Context-Specific Questions:
       ORDER BY DESC(?totalAnnualPrecipitation)  # Sort by highest precipitation
       LIMIT 1  # Select only the catchment with the highest precipitation
 
-    "What is the average atmospheric temperature at 2m above catchment 1 for 2010 to 2020?" : |
+    "What is the average atmospheric temperature at 2 meters (n4e_hyd:AirTemperature2mAvg ) above ground level for Catchment 1 (n4e_hyd:catchment_1)during the period from 2010 to 2020?" : |
       PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
       PREFIX sosa: <http://www.w3.org/ns/sosa/>
       PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -740,7 +739,7 @@ Context-Specific Questions:
       LIMIT 3
 
 
-    "In which years did 'OberaBuers (Bruecke L82)' have the most days with minor flooding due to river flow exceeding 5 m³/s?   [this question makes much sense if data is available as water level, but in this data set it is not available.] " : |
+    "In which years did 'OberaBuers (Bruecke L82)' experience the highest number of days with minor flooding, defined as days when river flow exceeded 5 m³/s??   [this question makes much sense if data is available as water level, but in this data set it is not available.] " : |
       PREFIX n4e_hyd: <https://nfdi4earth.pages.rwth-aachen.de/knowledgehub/nfdi4earth-ontology/test_hyd#>
       PREFIX sosa: <http://www.w3.org/ns/sosa/>
       PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -783,95 +782,95 @@ Context-Specific Questions:
       ORDER BY DESC(?floodDays)
       LIMIT 1 # Change this to 1 when it only needs to take the year with most of the days of flooding. This provides the top 5 years. 
 
-    "During which five years did the 'Buers (Bruecke L82)' gauging station record the highest number of flood events? # # in here it is assumed that when the flow is above 5 m3/s then flood events occur. This is incorrect. It should be connected to the water level. However, it is not available in this dataset. " : |
+    "During which five years did the 'Buers (Bruecke L82)' gauging station record the highest number of flood events, based on the assumption that flood events occur when the river flow exceeds 5 m³/s # # in here it is assumed that when the flow is above 5 m3/s then flood events occur. This is incorrect. It should be connected to the water level. However, it is not available in this dataset. " : |
   
-      PREFIX sosa: <http://www.w3.org/ns/sosa/>
-      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
-      PREFIX qudt: <https://qudt.org/schema/qudt/>
-      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-      PREFIX unit: <https://qudt.org/vocab/unit/>
-      PREFIX schema: <https://schema.org/>
+        PREFIX sosa: <http://www.w3.org/ns/sosa/>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+        PREFIX qudt: <https://qudt.org/schema/qudt/>
+        PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+        PREFIX unit: <https://qudt.org/vocab/unit/>
+        PREFIX schema: <https://schema.org/>
 
-      SELECT ?halfDecade (COUNT(DISTINCT ?date) AS ?floodDays)
-      WHERE { GRAPH <http://hydroturtle/LamahCE>
-          {
-          # Find observations for river flow
-          ?observation rdf:type sosa:Observation ;
-                      sosa:observedProperty envthes:21242 ;  # River flow
-                      sosa:madeBySensor ?sensor ;
-                      sosa:resultTime ?resultTime ;
-                      sosa:hasResult ?result .
+        SELECT ?halfDecade (COUNT(DISTINCT ?date) AS ?floodDays)
+        WHERE { GRAPH <http://hydroturtle/LamahCE>
+            {
+            # Find observations for river flow
+            ?observation rdf:type sosa:Observation ;
+                        sosa:observedProperty envthes:21242 ;  # River flow
+                        sosa:madeBySensor ?sensor ;
+                        sosa:resultTime ?resultTime ;
+                        sosa:hasResult ?result .
 
-          # Extract river flow value
-          ?result rdf:type qudt:QuantityValue ;
-                  qudt:numericValue ?flowRate. 
+            # Extract river flow value
+            ?result rdf:type qudt:QuantityValue ;
+                    qudt:numericValue ?flowRate. 
 
-          # Filter for the location "Buers (Bruecke L82)"
-          ?sensor schema:name "Buers (Bruecke L82)".
+            # Filter for the location "Buers (Bruecke L82)"
+            ?sensor schema:name "Buers (Bruecke L82)".
 
-          # Filter for flow rates exceeding 5 m³/s
-          FILTER(?flowRate > 5)
+            # Filter for flow rates exceeding 5 m³/s
+            FILTER(?flowRate > 5)
 
-          # Extract year and determine the half-decade period
-          BIND(YEAR(?resultTime) AS ?year)
-          BIND(FLOOR((?year - 1) / 5) * 5 + 1 AS ?halfDecade)  # Computes half-decade periods like 1996-2000, 2001-2005, etc.
+            # Extract year and determine the half-decade period
+            BIND(YEAR(?resultTime) AS ?year)
+            BIND(FLOOR((?year - 1) / 5) * 5 + 1 AS ?halfDecade)  # Computes half-decade periods like 1996-2000, 2001-2005, etc.
 
-          # Extract date from timestamp (only Year-Month-Day, ignoring time)
-          BIND(STRDT(CONCAT(STR(YEAR(?resultTime)), "-", STR(MONTH(?resultTime)), "-", STR(DAY(?resultTime))), xsd:date) AS ?date)
+            # Extract date from timestamp (only Year-Month-Day, ignoring time)
+            BIND(STRDT(CONCAT(STR(YEAR(?resultTime)), "-", STR(MONTH(?resultTime)), "-", STR(DAY(?resultTime))), xsd:date) AS ?date)
 
-      }
-      }
-      # Group by half-decade and count flood events
-      GROUP BY ?halfDecade
-      ORDER BY DESC(?floodDays)
-      LIMIT 5
+        }
+        }
+        # Group by half-decade and count flood events
+        GROUP BY ?halfDecade
+        ORDER BY DESC(?floodDays)
+        LIMIT 5 
 
   Specific to Gauging Stations:
-    "What is the elevation of the gauging station with the lowest observed average river flow in 1990-1999 decade?" : |
+    "What is the elevation of the gauging station that recorded the lowest average river flow during the decade 1990 to 1999?" : |
 
-      PREFIX sosa: <http://www.w3.org/ns/sosa/>
-      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-      PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
-      PREFIX qudt: <https://qudt.org/schema/qudt/>
-      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-      PREFIX unit: <https://qudt.org/vocab/unit/>
-      PREFIX schema: <https://schema.org/>
-      PREFIX locn: <http://www.w3.org/ns/locn#>
-      PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+        PREFIX sosa: <http://www.w3.org/ns/sosa/>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX envthes: <http://vocabs.lter-europe.net/EnvThes/>
+        PREFIX qudt: <https://qudt.org/schema/qudt/>
+        PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+        PREFIX unit: <https://qudt.org/vocab/unit/>
+        PREFIX schema: <https://schema.org/>
+        PREFIX locn: <http://www.w3.org/ns/locn#>
+        PREFIX geo: <http://www.opengis.net/ont/geosparql#>
 
-      SELECT ?gaugingStationName ?elevation (AVG(?flowRate) AS ?avgFlowRate) ?unit
-      WHERE { GRAPH <http://hydroturtle/LamahCE>
-          {
-          # Observations of river flow
-          ?observation rdf:type sosa:Observation ;
-                      sosa:observedProperty envthes:21242 ;
-                      sosa:madeBySensor ?sensor ;
-                      sosa:resultTime ?resultTime ;
-                      sosa:hasResult ?result.
+        SELECT ?gaugingStationName ?elevation (AVG(?flowRate) AS ?avgFlowRate) ?unit
+        WHERE { GRAPH <http://hydroturtle/LamahCE>
+                {
+                # Observations of river flow
+                ?observation rdf:type sosa:Observation ;
+                        sosa:observedProperty envthes:21242 ;
+                        sosa:madeBySensor ?sensor ;
+                        sosa:resultTime ?resultTime ;
+                        sosa:hasResult ?result.
 
-          # Access flow rate value
-          ?result qudt:numericValue ?flowRate;
-                  qudt:unit ?unit.
+                # Access flow rate value
+                ?result qudt:numericValue ?flowRate;
+                        qudt:unit ?unit.
 
-          # Link sensor to gauging station
-          ?sensor schema:name ?gaugingStationName;
-                  geo:hasGeometry ?geom.
+                # Link sensor to gauging station
+                ?sensor schema:name ?gaugingStationName;
+                        geo:hasGeometry ?geom.
 
-          # Get the WKT representation of the location
-          ?geom geo:asWKT ?geomObj.
+                # Get the WKT representation of the location
+                ?geom geo:asWKT ?geomObj.
 
-          # Extract elevation (Z coordinate)
-          BIND (bif:st_z(?geomObj) AS ?elevation)
+                # Extract elevation (Z coordinate)
+                BIND (bif:st_z(?geomObj) AS ?elevation)
 
-          # Filter data within a relevant time range (e.g., 2012-2013)
-          BIND (YEAR(?resultTime) AS ?resultYear)
-          FILTER (?resultYear >= 1990 && ?resultYear <= 1999)
-      }
-      }
-      GROUP BY ?gaugingStationName ?elevation ?unit
-      ORDER BY ASC(?avgFlowRate)
-      LIMIT 1
+                # Filter data within a relevant time range (e.g., 2012-2013)
+                BIND (YEAR(?resultTime) AS ?resultYear)
+                FILTER (?resultYear >= 1990 && ?resultYear <= 1999)
+        }
+        }
+        GROUP BY ?gaugingStationName ?elevation ?unit
+        ORDER BY ASC(?avgFlowRate)
+        LIMIT 1
 
 
 

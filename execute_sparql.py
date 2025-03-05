@@ -25,5 +25,6 @@ def query_sparql(sparql_query):
 # Test the connection
 if __name__ == "__main__":
     test_query = "SELECT ?s ?p ?o WHERE {GRAPH <http://hydroturtle/LamahCE> {?s ?p ?q}} LIMIT 10"
+
     response = query_sparql(test_query)
     print(response)
